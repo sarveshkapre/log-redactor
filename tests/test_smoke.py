@@ -238,3 +238,27 @@ def test_cli_gzip_roundtrip(tmp_path: Path) -> None:
     assert proc.stderr == ""
     with gzip.open(out, "rt", encoding="utf-8") as f:
         assert f.read().strip() == "password=[REDACTED]"
+
+
+def test_cli_dry_run_does_not_write_stdout(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    inp.write_text("password=secret\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    stats = json.loads(proc.stderr.strip())
+    assert stats["redactions"] >= 1

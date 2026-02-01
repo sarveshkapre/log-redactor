@@ -28,6 +28,7 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.7: Add `--dry-run` for audit-only runs.
 - v0.1.6: Add gzip input/output support (`.gz`).
 - v0.1.5: Add built-in rule presets (`--preset`) and preset listing (`rules --list-presets`).
 - v0.1.4: Add stable `rule_id` for rules/report.

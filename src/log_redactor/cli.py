@@ -85,6 +85,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Allow overwriting an existing backup file (when used with --backup-suffix).",
     )
+    p_run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not write redacted output (stats/report still emitted).",
+    )
     p_run.add_argument("--quiet", action="store_true", help="Do not emit stats.")
     p_run.add_argument(
         "--stats-out",
@@ -135,6 +140,8 @@ def _run(args: argparse.Namespace) -> int:
             raise ValueError("--in-place does not support --input '-'")
         if args.out != "-":
             raise ValueError("--in-place cannot be used with --out (omit it or use '-')")
+        if args.dry_run:
+            raise ValueError("--dry-run cannot be combined with --in-place")
         stats = _redact_in_place(
             Path(args.input),
             rules=rules,
@@ -148,6 +155,7 @@ def _run(args: argparse.Namespace) -> int:
             args.out,
             rules=rules,
             report_out=args.report_out,
+            dry_run=bool(args.dry_run),
         )
 
     if args.stats_out:
@@ -201,6 +209,7 @@ def _redact_to_output(
     *,
     rules: list[RedactionRule],
     report_out: str | None,
+    dry_run: bool,
 ) -> RedactionStats:
     with ExitStack() as stack:
         if input_arg == "-":
@@ -215,18 +224,29 @@ def _redact_to_output(
             else:
                 inp = stack.enter_context(input_path.open("r", encoding="utf-8", errors="ignore"))
 
-        if out_arg == "-":
-            out = sys.stdout
+        out: TextIO
+        out_path: Path | None
+
+        if dry_run:
+            if out_arg != "-":
+                raise ValueError("--dry-run requires --out '-' (default)")
+            out = stack.enter_context(open(os.devnull, "w", encoding="utf-8"))
             out_path = None
         else:
-            out_path = Path(out_arg).resolve()
-            if input_path is not None and out_path == input_path:
-                raise ValueError("Output path equals input path; use --in-place for safe overwrite")
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            if out_path.suffix == ".gz":
-                out = stack.enter_context(gzip.open(out_path, "wt", encoding="utf-8"))
+            if out_arg == "-":
+                out = sys.stdout
+                out_path = None
             else:
-                out = stack.enter_context(out_path.open("w", encoding="utf-8"))
+                out_path = Path(out_arg).resolve()
+                if input_path is not None and out_path == input_path:
+                    raise ValueError(
+                        "Output path equals input path; use --in-place for safe overwrite"
+                    )
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                if out_path.suffix == ".gz":
+                    out = stack.enter_context(gzip.open(out_path, "wt", encoding="utf-8"))
+                else:
+                    out = stack.enter_context(out_path.open("w", encoding="utf-8"))
 
         report_stream = None
         if report_out:

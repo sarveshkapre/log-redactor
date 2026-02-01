@@ -12,6 +12,7 @@
 - Added stable `rule_id` values to rule export and JSONL reports.
 - Added built-in presets (`--preset`) and preset listing (`rules --list-presets`).
 - Added transparent gzip support when paths end with `.gz`.
+- Added `--dry-run` to compute stats/report without writing redacted output.
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify
