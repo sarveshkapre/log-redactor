@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from log_redactor.redactor import redact_line, redact_file
+from log_redactor.redactor import load_rules_json, redact_file, redact_line
 
 
 def test_redact_line() -> None:
@@ -18,3 +19,15 @@ def test_redact_file(tmp_path: Path) -> None:
     inp.write_text("password=secret\\n", encoding="utf-8")
     redact_file(inp, out)
     assert out.read_text(encoding="utf-8").strip() == "password=[REDACTED]"
+
+
+def test_rules_json(tmp_path: Path) -> None:
+    rules_path = tmp_path / "rules.json"
+    rules_path.write_text(
+        json.dumps([{"pattern": "secret", "replacement": "[X]"}]),
+        encoding="utf-8",
+    )
+    rules = load_rules_json(rules_path)
+    out, count = redact_line("a secret b", rules=rules)
+    assert out == "a [X] b"
+    assert count == 1

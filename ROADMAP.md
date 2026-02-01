@@ -6,5 +6,7 @@
 
 ## Next
 
-- Configurable rule file.
-- JSONL redaction report.
+- Expand built-in rules (tokens, cookies, URLs with creds).
+- Rule packs / presets (security-focused defaults).
+- In-place redaction with backup ergonomics.
+- Performance pass (large file streaming + benchmarks).

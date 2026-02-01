@@ -1,9 +1,150 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
+from pathlib import Path
 
 
 def test_help() -> None:
     proc = subprocess.run([sys.executable, "-m", "log_redactor", "--help"], check=False)
     assert proc.returncode == 0
+
+
+def test_cli_redact_emits_json_stats(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    out = tmp_path / "out.log"
+    inp.write_text("email alice@example.com\\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    stats = json.loads(proc.stderr.strip())
+    assert stats["lines"] == 1
+    assert stats["redactions"] >= 1
+
+
+def test_cli_streaming_stdio(tmp_path: Path) -> None:
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            "-",
+            "--out",
+            "-",
+        ],
+        input="password=secret\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == "password=[REDACTED]"
+    stats = json.loads(proc.stderr.strip())
+    assert stats["lines"] == 1
+    assert stats["redactions"] >= 1
+
+
+def test_cli_report_out(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    out = tmp_path / "out.log"
+    report = tmp_path / "report.jsonl"
+    inp.write_text("password=secret\\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--report-out",
+            str(report),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert report.exists()
+    lines = report.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert event["line"] == 1
+    assert event["count"] == 1
+
+
+def test_cli_fail_on_redaction(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    out = tmp_path / "out.log"
+    inp.write_text("password=secret\\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--fail-on-redaction",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 1
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
+def test_cli_in_place_with_backup(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    inp.write_text("password=secret\\n", encoding="utf-8")
+    backup = tmp_path / "in.log.bak"
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--in-place",
+            "--backup-suffix",
+            ".bak",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    assert inp.read_text(encoding="utf-8").strip() == "password=[REDACTED]"
+    assert backup.read_text(encoding="utf-8") == "password=secret\\n"
