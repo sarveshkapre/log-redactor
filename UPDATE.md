@@ -10,6 +10,7 @@
 - Expanded built-in token/key patterns (GitHub/Slack/Stripe/Google tokens, JWTs, URL basic-auth, private key header).
 - Added cookie/set-cookie and token query redaction patterns; added `rules` subcommand to export the effective ruleset.
 - Added stable `rule_id` values to rule export and JSONL reports.
+- Added built-in presets (`--preset`) and preset listing (`rules --list-presets`).
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify

@@ -25,6 +25,21 @@ def test_rules_command_outputs_json() -> None:
     assert "rule_id" in payload["rules"][0]
 
 
+def test_rules_list_presets() -> None:
+    proc = subprocess.run(
+        [sys.executable, "-m", "log_redactor", "rules", "--list-presets"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stderr == ""
+    payload = json.loads(proc.stdout)
+    assert "default" in payload["presets"]
+    assert "secrets" in payload["presets"]
+    assert "pii" in payload["presets"]
+
+
 def test_cli_redact_emits_json_stats(tmp_path: Path) -> None:
     inp = tmp_path / "in.log"
     out = tmp_path / "out.log"
@@ -50,6 +65,35 @@ def test_cli_redact_emits_json_stats(tmp_path: Path) -> None:
     stats = json.loads(proc.stderr.strip())
     assert stats["lines"] == 1
     assert stats["redactions"] >= 1
+
+
+def test_cli_preset_secrets_does_not_redact_email(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    out = tmp_path / "out.log"
+    inp.write_text("email alice@example.com\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--preset",
+            "secrets",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    assert out.read_text(encoding="utf-8").strip() == "email alice@example.com"
 
 
 def test_cli_streaming_stdio(tmp_path: Path) -> None:

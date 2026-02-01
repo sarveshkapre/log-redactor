@@ -10,7 +10,15 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TextIO, cast
 
-from .redactor import DEFAULT_RULES, RedactionRule, RedactionStats, load_rules_json, redact_stream
+from .redactor import (
+    DEFAULT_RULES,
+    RedactionRule,
+    RedactionStats,
+    load_rules_json,
+    preset_names,
+    preset_rules,
+    redact_stream,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,6 +39,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Do not include built-in redaction rules.",
     )
     p_rules.add_argument("--pretty", action="store_true", help="Pretty-print JSON.")
+    p_rules.add_argument(
+        "--preset",
+        default="default",
+        help="Built-in preset to use (default: default).",
+    )
+    p_rules.add_argument(
+        "--list-presets",
+        action="store_true",
+        help="List built-in presets and exit.",
+    )
     p_rules.set_defaults(func=_rules)
 
     p_run = sub.add_parser("redact", help="Redact a log file")
@@ -46,6 +64,11 @@ def main(argv: list[str] | None = None) -> int:
         "--no-defaults",
         action="store_true",
         help="Do not include built-in redaction rules.",
+    )
+    p_run.add_argument(
+        "--preset",
+        default="default",
+        help="Built-in preset to use (default: default).",
     )
     p_run.add_argument(
         "--in-place",
@@ -93,7 +116,16 @@ def _version() -> str:
 
 
 def _run(args: argparse.Namespace) -> int:
-    rules: list[RedactionRule] = [] if args.no_defaults else list(DEFAULT_RULES)
+    if args.no_defaults and args.preset != "default":
+        raise ValueError("--no-defaults cannot be combined with --preset")
+
+    rules: list[RedactionRule]
+    if args.no_defaults:
+        rules = []
+    elif args.preset == "default":
+        rules = list(DEFAULT_RULES)
+    else:
+        rules = preset_rules(args.preset)
     for path_str in args.rules:
         rules.extend(load_rules_json(Path(path_str)))
 
@@ -132,7 +164,20 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def _rules(args: argparse.Namespace) -> int:
-    rules: list[RedactionRule] = [] if args.no_defaults else list(DEFAULT_RULES)
+    if args.list_presets:
+        print(json.dumps({"presets": preset_names()}, separators=(",", ":"), sort_keys=True))
+        return 0
+
+    if args.no_defaults and args.preset != "default":
+        raise ValueError("--no-defaults cannot be combined with --preset")
+
+    rules: list[RedactionRule]
+    if args.no_defaults:
+        rules = []
+    elif args.preset == "default":
+        rules = list(DEFAULT_RULES)
+    else:
+        rules = preset_rules(args.preset)
     for path_str in args.rules:
         rules.extend(load_rules_json(Path(path_str)))
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence, TextIO
 
 
-DEFAULT_PATTERNS: list[tuple[str, str]] = [
+SECRETS_PATTERNS: list[tuple[str, str]] = [
     (r"AKIA[0-9A-Z]{16}", "[REDACTED_AWS_KEY]"),
     (r"ghp_[A-Za-z0-9]{36}", "[REDACTED_GITHUB_TOKEN]"),
     (r"github_pat_[A-Za-z0-9_]{22,255}", "[REDACTED_GITHUB_TOKEN]"),
@@ -24,6 +24,9 @@ DEFAULT_PATTERNS: list[tuple[str, str]] = [
         r"\1[REDACTED_USER]:[REDACTED_PASS]@",
     ),
     (r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----", "[REDACTED_PRIVATE_KEY]"),
+]
+
+HEADERS_PATTERNS: list[tuple[str, str]] = [
     (
         r"(?i)^(cookie:\s*)[^\r\n]+",
         r"\1[REDACTED]",
@@ -32,18 +35,37 @@ DEFAULT_PATTERNS: list[tuple[str, str]] = [
         r"(?i)^(set-cookie:\s*)[^\r\n]+",
         r"\1[REDACTED]",
     ),
+    (r"(?i)authorization: basic [a-z0-9+/=]+", "authorization: basic [REDACTED]"),
+    (r"(?i)authorization: bearer [a-z0-9\-_.=]+", "authorization: bearer [REDACTED]"),
+    (r"(?i)x-api-key:\s*[^\s]+", "x-api-key: [REDACTED]"),
+]
+
+PARAM_PATTERNS: list[tuple[str, str]] = [
     (
         r"(?i)\b(access_token|refresh_token|id_token|session(?:id)?|session_id|csrf(?:_token)?|auth_token|session_token|token)=((?!\[REDACTED)[^\s&;]+)",
         r"\1=[REDACTED]",
     ),
-    (r"(?i)authorization: basic [a-z0-9+/=]+", "authorization: basic [REDACTED]"),
-    (r"(?i)x-api-key:\s*[^\s]+", "x-api-key: [REDACTED]"),
-    (r"(?i)authorization: bearer [a-z0-9\-_.=]+", "authorization: bearer [REDACTED]"),
     (r"(?i)api[_-]?key=([a-z0-9\-_.]+)", "api_key=[REDACTED]"),
     (r"(?i)password=([^\s&]+)", "password=[REDACTED]"),
+]
+
+PII_PATTERNS: list[tuple[str, str]] = [
     (r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[REDACTED_EMAIL]"),
     (r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED_SSN]"),
 ]
+
+DEFAULT_PATTERNS: list[tuple[str, str]] = [
+    *SECRETS_PATTERNS,
+    *HEADERS_PATTERNS,
+    *PARAM_PATTERNS,
+    *PII_PATTERNS,
+]
+
+PRESET_PATTERNS: dict[str, list[tuple[str, str]]] = {
+    "default": DEFAULT_PATTERNS,
+    "secrets": [*SECRETS_PATTERNS, *HEADERS_PATTERNS, *PARAM_PATTERNS],
+    "pii": PII_PATTERNS,
+}
 
 
 @dataclass(frozen=True)
@@ -89,6 +111,18 @@ def _compile_rules(patterns: Iterable[tuple[str, str]]) -> list[RedactionRule]:
 
 
 DEFAULT_RULES: list[RedactionRule] = _compile_rules(DEFAULT_PATTERNS)
+
+
+def preset_names() -> list[str]:
+    return sorted(PRESET_PATTERNS.keys())
+
+
+def preset_rules(name: str) -> list[RedactionRule]:
+    try:
+        patterns = PRESET_PATTERNS[name]
+    except KeyError as e:
+        raise ValueError(f"Unknown preset: {name}") from e
+    return _compile_rules(patterns)
 
 
 def load_rules_json(path: Path) -> list[RedactionRule]:

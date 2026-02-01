@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.5 - 2026-02-01
+
+- Add built-in rule presets (`--preset`) and preset listing (`rules --list-presets`).
+
 ## v0.1.4 - 2026-02-01
 
 - Add stable `rule_id` to `rules` output and JSONL reports.
