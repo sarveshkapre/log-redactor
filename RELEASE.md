@@ -2,6 +2,10 @@
 
 This repo uses SemVer. `v0.x` may include breaking changes.
 
+## v0.1.6 - 2026-02-01
+
+- Support gzip input/output when paths end with `.gz`.
+
 ## v0.1.5 - 2026-02-01
 
 - Add built-in rule presets (`--preset`) and preset listing (`rules --list-presets`).

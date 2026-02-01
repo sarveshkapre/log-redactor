@@ -28,6 +28,7 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.6: Add gzip input/output support (`.gz`).
 - v0.1.5: Add built-in rule presets (`--preset`) and preset listing (`rules --list-presets`).
 - v0.1.4: Add stable `rule_id` for rules/report.
 - v0.1.3: Add cookie/token redaction patterns; add `rules` subcommand.

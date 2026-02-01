@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import gzip
 import os
 import sys
 from contextlib import ExitStack
@@ -207,7 +208,12 @@ def _redact_to_output(
             input_path = None
         else:
             input_path = Path(input_arg).resolve()
-            inp = stack.enter_context(input_path.open("r", encoding="utf-8", errors="ignore"))
+            if input_path.suffix == ".gz":
+                inp = stack.enter_context(
+                    gzip.open(input_path, "rt", encoding="utf-8", errors="ignore")
+                )
+            else:
+                inp = stack.enter_context(input_path.open("r", encoding="utf-8", errors="ignore"))
 
         if out_arg == "-":
             out = sys.stdout
@@ -217,7 +223,10 @@ def _redact_to_output(
             if input_path is not None and out_path == input_path:
                 raise ValueError("Output path equals input path; use --in-place for safe overwrite")
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out = stack.enter_context(out_path.open("w", encoding="utf-8"))
+            if out_path.suffix == ".gz":
+                out = stack.enter_context(gzip.open(out_path, "wt", encoding="utf-8"))
+            else:
+                out = stack.enter_context(out_path.open("w", encoding="utf-8"))
 
         report_stream = None
         if report_out:
@@ -273,7 +282,12 @@ def _redact_in_place(
             os.chmod(temp_path, st.st_mode)
             tmp_text = cast(TextIO, tmp)
 
-            with input_path.open("r", encoding="utf-8", errors="ignore") as inp:
+            if input_path.suffix == ".gz":
+                inp_ctx = gzip.open(input_path, "rt", encoding="utf-8", errors="ignore")
+            else:
+                inp_ctx = input_path.open("r", encoding="utf-8", errors="ignore")
+
+            with inp_ctx as inp:
                 if report_path is None:
                     stats = redact_stream(inp, tmp_text, rules=rules)
                 else:

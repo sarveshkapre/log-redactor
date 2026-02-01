@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import subprocess
 import sys
@@ -208,3 +209,32 @@ def test_cli_in_place_with_backup(tmp_path: Path) -> None:
     assert proc.stderr == ""
     assert inp.read_text(encoding="utf-8").strip() == "password=[REDACTED]"
     assert backup.read_text(encoding="utf-8") == "password=secret\\n"
+
+
+def test_cli_gzip_roundtrip(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log.gz"
+    out = tmp_path / "out.log.gz"
+    with gzip.open(inp, "wt", encoding="utf-8") as f:
+        f.write("password=secret\n")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    with gzip.open(out, "rt", encoding="utf-8") as f:
+        assert f.read().strip() == "password=[REDACTED]"

@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.5)
+## Scope (v0.1.6)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
@@ -45,6 +45,14 @@ python -m log_redactor rules --list-presets
 
 ```bash
 python -m log_redactor redact --input - --out - < app.log > app.redacted.log
+```
+
+### Gzip support
+
+If the input or output path ends with `.gz`, it is read/written as gzip automatically:
+
+```bash
+python -m log_redactor redact --input app.log.gz --out app.redacted.log.gz
 ```
 
 ### In-place redaction (atomic)
