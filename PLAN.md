@@ -28,6 +28,7 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.9: Add `--encoding` / `--errors` decoding controls.
 - v0.1.8: Add `--out-suffix` convenience output option.
 - v0.1.7: Add `--dry-run` for audit-only runs.
 - v0.1.6: Add gzip input/output support (`.gz`).

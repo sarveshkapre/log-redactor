@@ -59,6 +59,12 @@ def main(argv: list[str] | None = None) -> int:
         "--out-suffix",
         help="Write output to <input><suffix> (requires --input not '-' and --out not set).",
     )
+    p_run.add_argument("--encoding", default="utf-8", help="Text encoding for file IO.")
+    p_run.add_argument(
+        "--errors",
+        default="ignore",
+        help="Decode error handling (e.g. 'ignore', 'replace', 'strict').",
+    )
     p_run.add_argument(
         "--rules",
         action="append",
@@ -153,12 +159,16 @@ def _run(args: argparse.Namespace) -> int:
             raise ValueError("--in-place cannot be used with --out (omit it or use '-')")
         if args.dry_run:
             raise ValueError("--dry-run cannot be combined with --in-place")
+        if Path(args.input).suffix == ".gz":
+            raise ValueError("--in-place is not supported for .gz inputs; use --out <path>.gz")
         stats = _redact_in_place(
             Path(args.input),
             rules=rules,
             report_out=args.report_out,
             backup_suffix=args.backup_suffix,
             backup_overwrite=bool(args.backup_overwrite),
+            encoding=args.encoding,
+            errors=args.errors,
         )
     else:
         stats = _redact_to_output(
@@ -167,6 +177,8 @@ def _run(args: argparse.Namespace) -> int:
             rules=rules,
             report_out=args.report_out,
             dry_run=bool(args.dry_run),
+            encoding=args.encoding,
+            errors=args.errors,
         )
 
     if args.stats_out:
@@ -221,6 +233,8 @@ def _redact_to_output(
     rules: list[RedactionRule],
     report_out: str | None,
     dry_run: bool,
+    encoding: str,
+    errors: str,
 ) -> RedactionStats:
     with ExitStack() as stack:
         if input_arg == "-":
@@ -230,10 +244,10 @@ def _redact_to_output(
             input_path = Path(input_arg).resolve()
             if input_path.suffix == ".gz":
                 inp = stack.enter_context(
-                    gzip.open(input_path, "rt", encoding="utf-8", errors="ignore")
+                    gzip.open(input_path, "rt", encoding=encoding, errors=errors)
                 )
             else:
-                inp = stack.enter_context(input_path.open("r", encoding="utf-8", errors="ignore"))
+                inp = stack.enter_context(input_path.open("r", encoding=encoding, errors=errors))
 
         out: TextIO
         out_path: Path | None
@@ -241,7 +255,7 @@ def _redact_to_output(
         if dry_run:
             if out_arg != "-":
                 raise ValueError("--dry-run requires --out '-' (default)")
-            out = stack.enter_context(open(os.devnull, "w", encoding="utf-8"))
+            out = stack.enter_context(open(os.devnull, "w", encoding=encoding))
             out_path = None
         else:
             if out_arg == "-":
@@ -255,9 +269,9 @@ def _redact_to_output(
                     )
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 if out_path.suffix == ".gz":
-                    out = stack.enter_context(gzip.open(out_path, "wt", encoding="utf-8"))
+                    out = stack.enter_context(gzip.open(out_path, "wt", encoding=encoding))
                 else:
-                    out = stack.enter_context(out_path.open("w", encoding="utf-8"))
+                    out = stack.enter_context(out_path.open("w", encoding=encoding))
 
         report_stream = None
         if report_out:
@@ -279,10 +293,14 @@ def _redact_in_place(
     report_out: str | None,
     backup_suffix: str | None,
     backup_overwrite: bool,
+    encoding: str,
+    errors: str,
 ) -> RedactionStats:
     input_path = input_path.resolve()
     if not input_path.exists():
         raise FileNotFoundError(str(input_path))
+    if input_path.suffix == ".gz":
+        raise ValueError("--in-place is not supported for .gz inputs")
 
     st = input_path.stat()
     report_path = Path(report_out).resolve() if report_out else None
@@ -303,7 +321,7 @@ def _redact_in_place(
     try:
         with NamedTemporaryFile(
             mode="w",
-            encoding="utf-8",
+            encoding=encoding,
             delete=False,
             dir=str(input_path.parent),
             prefix=input_path.name + ".",
@@ -314,9 +332,9 @@ def _redact_in_place(
             tmp_text = cast(TextIO, tmp)
 
             if input_path.suffix == ".gz":
-                inp_ctx = gzip.open(input_path, "rt", encoding="utf-8", errors="ignore")
+                inp_ctx = gzip.open(input_path, "rt", encoding=encoding, errors=errors)
             else:
-                inp_ctx = input_path.open("r", encoding="utf-8", errors="ignore")
+                inp_ctx = input_path.open("r", encoding=encoding, errors=errors)
 
             with inp_ctx as inp:
                 if report_path is None:

@@ -289,3 +289,36 @@ def test_cli_out_suffix(tmp_path: Path) -> None:
     assert proc.stderr == ""
     out = Path(str(inp) + ".redacted")
     assert out.read_text(encoding="utf-8").strip() == "password=[REDACTED]"
+
+
+def test_cli_encoding_errors_replace(tmp_path: Path) -> None:
+    inp = tmp_path / "bad.log"
+    out = tmp_path / "out.log"
+    inp.write_bytes(b"bad:\xff\npassword=secret\n")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--encoding",
+            "utf-8",
+            "--errors",
+            "replace",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    text = out.read_text(encoding="utf-8")
+    assert "bad:\ufffd" in text
+    assert "password=[REDACTED]" in text

@@ -2,6 +2,10 @@
 
 This repo uses SemVer. `v0.x` may include breaking changes.
 
+## v0.1.9 - 2026-02-01
+
+- Add `--encoding` / `--errors` controls for file decoding.
+
 ## v0.1.8 - 2026-02-01
 
 - Add `--out-suffix` convenience output option.

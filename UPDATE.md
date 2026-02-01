@@ -14,6 +14,7 @@
 - Added transparent gzip support when paths end with `.gz`.
 - Added `--dry-run` to compute stats/report without writing redacted output.
 - Added `--out-suffix` for easy sibling-file output.
+- Added `--encoding` and `--errors` to control file decoding.
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify

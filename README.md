@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.8)
+## Scope (v0.1.9)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
@@ -67,6 +67,14 @@ Compute stats (and optionally a report) without writing any redacted output:
 
 ```bash
 python -m log_redactor redact --input app.log --dry-run
+```
+
+### Encoding
+
+Override how files are decoded (defaults: `--encoding utf-8` and `--errors ignore`):
+
+```bash
+python -m log_redactor redact --input app.log --out app.redacted.log --errors replace
 ```
 
 ### In-place redaction (atomic)
