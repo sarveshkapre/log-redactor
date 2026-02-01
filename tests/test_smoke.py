@@ -262,3 +262,30 @@ def test_cli_dry_run_does_not_write_stdout(tmp_path: Path) -> None:
     assert proc.stdout == ""
     stats = json.loads(proc.stderr.strip())
     assert stats["redactions"] >= 1
+
+
+def test_cli_out_suffix(tmp_path: Path) -> None:
+    inp = tmp_path / "app.log"
+    inp.write_text("password=secret\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out-suffix",
+            ".redacted",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    out = Path(str(inp) + ".redacted")
+    assert out.read_text(encoding="utf-8").strip() == "password=[REDACTED]"

@@ -28,6 +28,7 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.8: Add `--out-suffix` convenience output option.
 - v0.1.7: Add `--dry-run` for audit-only runs.
 - v0.1.6: Add gzip input/output support (`.gz`).
 - v0.1.5: Add built-in rule presets (`--preset`) and preset listing (`rules --list-presets`).

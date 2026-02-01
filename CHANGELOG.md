@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.8 - 2026-02-01
+
+- Add `--out-suffix` convenience output option.
+
 ## v0.1.7 - 2026-02-01
 
 - Add `--dry-run` to compute stats/report without writing redacted output.

@@ -56,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--input", required=True, help="Input log file path or '-' for stdin")
     p_run.add_argument("--out", default="-", help="Output log path or '-' for stdout")
     p_run.add_argument(
+        "--out-suffix",
+        help="Write output to <input><suffix> (requires --input not '-' and --out not set).",
+    )
+    p_run.add_argument(
         "--rules",
         action="append",
         default=[],
@@ -122,6 +126,13 @@ def _version() -> str:
 
 
 def _run(args: argparse.Namespace) -> int:
+    if args.out_suffix:
+        if args.input == "-":
+            raise ValueError("--out-suffix does not support --input '-'")
+        if args.out != "-":
+            raise ValueError("--out-suffix cannot be combined with --out")
+        args.out = args.input + args.out_suffix
+
     if args.no_defaults and args.preset != "default":
         raise ValueError("--no-defaults cannot be combined with --preset")
 
