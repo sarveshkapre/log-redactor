@@ -155,6 +155,38 @@ def test_cli_report_out(tmp_path: Path) -> None:
     assert event["rule_id"]
 
 
+def test_cli_report_out_stderr_requires_quiet(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    inp.write_text("password=secret\\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            "-",
+            "--report-out",
+            "-",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == "password=[REDACTED]"
+    report_lines = proc.stderr.strip().splitlines()
+    assert len(report_lines) == 1
+    event = json.loads(report_lines[0])
+    assert event["line"] == 1
+    assert event["count"] == 1
+    assert event["rule_id"]
+
+
 def test_cli_fail_on_redaction(tmp_path: Path) -> None:
     inp = tmp_path / "in.log"
     out = tmp_path / "out.log"

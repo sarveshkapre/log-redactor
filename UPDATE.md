@@ -17,6 +17,7 @@
 - Added `--encoding` and `--errors` to control file decoding.
 - Added `--atomic` for safe output file writes.
 - Added `--max-redactions` for threshold-based CI gating.
+- Added `--report-out -` to write JSONL reports to stderr (with `--quiet`).
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify

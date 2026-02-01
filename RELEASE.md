@@ -2,6 +2,10 @@
 
 This repo uses SemVer. `v0.x` may include breaking changes.
 
+## v0.1.12 - 2026-02-01
+
+- Support `--report-out -` to write JSONL report to stderr (requires `--quiet`).
+
 ## v0.1.11 - 2026-02-01
 
 - Add `--max-redactions` threshold gate.

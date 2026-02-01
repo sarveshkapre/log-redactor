@@ -199,6 +199,9 @@ def _run(args: argparse.Namespace) -> int:
         stats_path.parent.mkdir(parents=True, exist_ok=True)
         stats_path.write_text(stats.to_json() + "\n", encoding="utf-8")
 
+    if args.report_out == "-" and not args.quiet:
+        raise ValueError("--report-out '-' requires --quiet (to avoid mixing with stats on stderr)")
+
     if not args.quiet:
         print(stats.to_json(), file=sys.stderr)
 
@@ -270,11 +273,14 @@ def _redact_to_output(
 
         report_stream = None
         if report_out:
-            report_path = Path(report_out).resolve()
-            if input_path is not None and report_path == input_path:
-                raise ValueError("--report-out cannot be the same path as --input")
-            report_path.parent.mkdir(parents=True, exist_ok=True)
-            report_stream = stack.enter_context(report_path.open("w", encoding="utf-8"))
+            if report_out == "-":
+                report_stream = sys.stderr
+            else:
+                report_path = Path(report_out).resolve()
+                if input_path is not None and report_path == input_path:
+                    raise ValueError("--report-out cannot be the same path as --input")
+                report_path.parent.mkdir(parents=True, exist_ok=True)
+                report_stream = stack.enter_context(report_path.open("w", encoding="utf-8"))
 
         if dry_run:
             if out_arg != "-":
@@ -292,7 +298,7 @@ def _redact_to_output(
         out_path = Path(out_arg).resolve()
         if input_path is not None and out_path == input_path:
             raise ValueError("Output path equals input path; use --in-place for safe overwrite")
-        if report_out and Path(report_out).resolve() == out_path:
+        if report_out and report_out != "-" and Path(report_out).resolve() == out_path:
             raise ValueError("--report-out cannot be the same path as --out")
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -358,7 +364,7 @@ def _redact_in_place(
         raise ValueError("--in-place is not supported for .gz inputs")
 
     st = input_path.stat()
-    report_path = Path(report_out).resolve() if report_out else None
+    report_path = Path(report_out).resolve() if report_out and report_out != "-" else None
     if report_path is not None and report_path == input_path:
         raise ValueError("--report-out cannot be the same path as --input when using --in-place")
 
@@ -392,7 +398,9 @@ def _redact_in_place(
                 inp_ctx = input_path.open("r", encoding=encoding, errors=errors)
 
             with inp_ctx as inp:
-                if report_path is None:
+                if report_out == "-":
+                    stats = redact_stream(inp, tmp_text, rules=rules, report_out=sys.stderr)
+                elif report_path is None:
                     stats = redact_stream(inp, tmp_text, rules=rules)
                 else:
                     report_path.parent.mkdir(parents=True, exist_ok=True)
