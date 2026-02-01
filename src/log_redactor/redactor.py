@@ -9,6 +9,20 @@ from typing import Any, Iterable, Sequence, TextIO
 
 DEFAULT_PATTERNS: list[tuple[str, str]] = [
     (r"AKIA[0-9A-Z]{16}", "[REDACTED_AWS_KEY]"),
+    (r"ghp_[A-Za-z0-9]{36}", "[REDACTED_GITHUB_TOKEN]"),
+    (r"github_pat_[A-Za-z0-9_]{22,255}", "[REDACTED_GITHUB_TOKEN]"),
+    (r"xox[aboprs]-[0-9A-Za-z-]{10,200}", "[REDACTED_SLACK_TOKEN]"),
+    (r"sk_(?:live|test)_[0-9A-Za-z]{16,}", "[REDACTED_STRIPE_KEY]"),
+    (r"AIza[0-9A-Za-z_-]{35}", "[REDACTED_GOOGLE_API_KEY]"),
+    (
+        r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}",
+        "[REDACTED_JWT]",
+    ),
+    (
+        r"(https?://)([^\s:/?#]+):([^\s@]+)@",
+        r"\1[REDACTED_USER]:[REDACTED_PASS]@",
+    ),
+    (r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----", "[REDACTED_PRIVATE_KEY]"),
     (r"(?i)authorization: bearer [a-z0-9\-_.=]+", "authorization: bearer [REDACTED]"),
     (r"(?i)api[_-]?key=([a-z0-9\-_.]+)", "api_key=[REDACTED]"),
     (r"(?i)password=([^\s&]+)", "password=[REDACTED]"),

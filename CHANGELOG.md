@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.2 - 2026-02-01
+
+- Expand built-in redaction rules (GitHub/Slack/Stripe/Google tokens, JWTs, URL basic-auth, private key header).
+
 ## v0.1.1 - 2026-02-01
 
 - Add configurable JSON rule files via `--rules` and `--no-defaults`.

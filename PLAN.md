@@ -28,13 +28,11 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.2: Expand built-in token/key patterns (GitHub/Slack/Stripe/Google/JWT, URL basic-auth, private key header).
+- v0.1.1: JSON rules config, stream-friendly I/O, JSON stats/report, CI gating, atomic in-place overwrite.
 - v0.1.0: Regex-based redaction + CLI + stats output.
-- Unreleased: JSON rules config, stream-friendly I/O, JSON stats/report, CI gating, atomic in-place overwrite.
 
 ## Next
 
-- Add richer built-in rules (tokens, cookies, URLs with creds) with tests.
+- Add cookie/session/token redaction (common header/cookie patterns) with tests.
 - Configurable rule packs (presets) and docs for safe defaults.
-
-- Redaction rules for secrets/PII.
-- CLI to redact files.

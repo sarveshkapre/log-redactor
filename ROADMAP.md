@@ -6,7 +6,7 @@
 
 ## Next
 
-- Expand built-in rules (tokens, cookies, URLs with creds).
+- Expand built-in rules (cookies/session tokens, URLs with query creds).
 - Rule packs / presets (security-focused defaults).
 - In-place redaction with backup ergonomics.
 - Performance pass (large file streaming + benchmarks).

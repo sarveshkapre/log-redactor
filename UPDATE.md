@@ -7,6 +7,7 @@
 - Optional JSONL redaction report via `--report-out report.jsonl` (line number + rule pattern + count).
 - CI/policy gating via `--fail-on-redaction` (exit code `1` when any redactions occur).
 - Atomic in-place overwrite via `--in-place` with optional backup via `--backup-suffix .bak`.
+- Expanded built-in token/key patterns (GitHub/Slack/Stripe/Google tokens, JWTs, URL basic-auth, private key header).
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify
@@ -27,4 +28,3 @@ python -m log_redactor redact --input app.log --in-place --backup-suffix .bak --
 # custom rules + report
 python -m log_redactor redact --input app.log --out app.redacted.log --rules rules.json --report-out report.jsonl
 ```
-

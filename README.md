@@ -2,11 +2,14 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.1)
+## Scope (v0.1.2)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
 - JSON stats output (stderr) and optional JSONL redaction report.
+
+Built-in rules currently cover common patterns like AWS keys, bearer auth headers, email, SSNs, plus additional
+tokens/keys (e.g. GitHub tokens, Slack tokens, Stripe keys, Google API keys, JWTs), and URL basic-auth.
 
 ## Quickstart
 

@@ -31,3 +31,10 @@ def test_rules_json(tmp_path: Path) -> None:
     out, count = redact_line("a secret b", rules=rules)
     assert out == "a [X] b"
     assert count == 1
+
+
+def test_additional_builtin_rules_smoke() -> None:
+    out, count = redact_line("tok=ghp_" + ("a" * 36) + " url=https://user:pass@example.com/x\n")
+    assert "[REDACTED_GITHUB_TOKEN]" in out
+    assert "https://[REDACTED_USER]:[REDACTED_PASS]@example.com" in out
+    assert count >= 2
