@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "log-redactor"
-version = "0.1.10"
+version = "0.1.11"
 description = "Redact secrets/PII from logs with configurable rules, tests, and safe defaults"
 readme = "README.md"
 requires-python = ">=3.11"

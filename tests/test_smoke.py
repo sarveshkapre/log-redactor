@@ -371,3 +371,27 @@ def test_cli_atomic_rejects_stdout(tmp_path: Path) -> None:
         check=False,
     )
     assert proc.returncode == 2
+
+
+def test_cli_max_redactions_gate(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    inp.write_text("password=secret\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--dry-run",
+            "--max-redactions",
+            "0",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 1

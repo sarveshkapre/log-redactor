@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.10)
+## Scope (v0.1.11)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
@@ -124,6 +124,12 @@ Exit non-zero if anything was redacted:
 
 ```bash
 python -m log_redactor redact --input app.log --out app.redacted.log --fail-on-redaction --quiet
+```
+
+Exit non-zero if redactions exceed a threshold:
+
+```bash
+python -m log_redactor redact --input app.log --dry-run --max-redactions 0 --quiet
 ```
 
 ### Presets

@@ -28,6 +28,7 @@ See `PROJECT.md` for canonical commands.
 
 ## Shipped (latest)
 
+- v0.1.11: Add `--max-redactions` threshold gate.
 - v0.1.10: Add `--atomic` for safe output file writes.
 - v0.1.9: Add `--encoding` / `--errors` decoding controls.
 - v0.1.8: Add `--out-suffix` convenience output option.

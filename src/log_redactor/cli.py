@@ -119,6 +119,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Exit non-zero if any redactions occurred.",
     )
+    p_run.add_argument(
+        "--max-redactions",
+        type=int,
+        help="Exit non-zero if redactions exceed this number (useful for CI/policy gating).",
+    )
     p_run.set_defaults(func=_run)
 
     args = parser.parse_args(argv)
@@ -199,6 +204,11 @@ def _run(args: argparse.Namespace) -> int:
 
     if args.fail_on_redaction and stats.redactions:
         return 1
+    if args.max_redactions is not None:
+        if args.max_redactions < 0:
+            raise ValueError("--max-redactions must be >= 0")
+        if stats.redactions > args.max_redactions:
+            return 1
 
     return 0
 
