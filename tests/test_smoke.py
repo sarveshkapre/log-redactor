@@ -22,6 +22,7 @@ def test_rules_command_outputs_json() -> None:
     assert proc.stderr == ""
     payload = json.loads(proc.stdout)
     assert isinstance(payload["rules"], list)
+    assert "rule_id" in payload["rules"][0]
 
 
 def test_cli_redact_emits_json_stats(tmp_path: Path) -> None:
@@ -105,6 +106,8 @@ def test_cli_report_out(tmp_path: Path) -> None:
     event = json.loads(lines[0])
     assert event["line"] == 1
     assert event["count"] == 1
+    assert isinstance(event["rule_id"], str)
+    assert event["rule_id"]
 
 
 def test_cli_fail_on_redaction(tmp_path: Path) -> None:

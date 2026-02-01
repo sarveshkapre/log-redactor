@@ -136,7 +136,12 @@ def _rules(args: argparse.Namespace) -> int:
     for path_str in args.rules:
         rules.extend(load_rules_json(Path(path_str)))
 
-    payload = {"rules": [{"pattern": r.pattern, "replacement": r.replacement} for r in rules]}
+    payload = {
+        "rules": [
+            {"pattern": r.pattern, "replacement": r.replacement, "rule_id": r.rule_id}
+            for r in rules
+        ]
+    }
     if args.pretty:
         print(json.dumps(payload, indent=2, sort_keys=True), file=sys.stdout)
     else:

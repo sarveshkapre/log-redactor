@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.3)
+## Scope (v0.1.4)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,16 +60,30 @@ class RedactionStats:
 
 @dataclass(frozen=True)
 class RedactionRule:
+    rule_id: str
     pattern: str
     regex: re.Pattern[str]
     replacement: str
+
+
+def _rule_id(pattern: str, replacement: str) -> str:
+    h = hashlib.sha256()
+    h.update(pattern.encode("utf-8"))
+    h.update(b"\0")
+    h.update(replacement.encode("utf-8"))
+    return h.hexdigest()[:12]
 
 
 def _compile_rules(patterns: Iterable[tuple[str, str]]) -> list[RedactionRule]:
     rules: list[RedactionRule] = []
     for pattern, replacement in patterns:
         rules.append(
-            RedactionRule(pattern=pattern, regex=re.compile(pattern), replacement=replacement)
+            RedactionRule(
+                rule_id=_rule_id(pattern, replacement),
+                pattern=pattern,
+                regex=re.compile(pattern),
+                replacement=replacement,
+            )
         )
     return rules
 
@@ -101,7 +116,12 @@ def load_rules_json(path: Path) -> list[RedactionRule]:
             raise ValueError(f"Rule #{idx} must have string 'pattern' and 'replacement'")
         try:
             rules.append(
-                RedactionRule(pattern=pattern, regex=re.compile(pattern), replacement=replacement)
+                RedactionRule(
+                    rule_id=_rule_id(pattern, replacement),
+                    pattern=pattern,
+                    regex=re.compile(pattern),
+                    replacement=replacement,
+                )
             )
         except re.error as e:
             raise ValueError(f"Invalid regex in rule #{idx}: {e}") from e
@@ -138,7 +158,12 @@ def redact_stream(
                 if report_out is not None:
                     report_out.write(
                         json.dumps(
-                            {"line": lines, "pattern": rule.pattern, "count": count},
+                            {
+                                "count": count,
+                                "line": lines,
+                                "pattern": rule.pattern,
+                                "rule_id": rule.rule_id,
+                            },
                             separators=(",", ":"),
                             sort_keys=True,
                         )

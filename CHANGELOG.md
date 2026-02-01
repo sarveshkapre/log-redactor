@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.4 - 2026-02-01
+
+- Add stable `rule_id` to `rules` output and JSONL reports.
+
 ## v0.1.3 - 2026-02-01
 
 - Add `rules` subcommand to export the effective ruleset as JSON.
