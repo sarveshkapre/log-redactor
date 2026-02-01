@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.9)
+## Scope (v0.1.10)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
@@ -83,6 +83,15 @@ Overwrite the input file safely (writes a temp file and atomically replaces the 
 
 ```bash
 python -m log_redactor redact --input app.log --in-place --backup-suffix .bak --quiet
+```
+
+### Atomic output file writes
+
+When writing to a file, you can avoid partially-written outputs by writing to a temp file and atomically
+replacing the destination:
+
+```bash
+python -m log_redactor redact --input app.log --out app.redacted.log --atomic
 ```
 
 ### Custom rules

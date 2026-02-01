@@ -59,6 +59,11 @@ def main(argv: list[str] | None = None) -> int:
         "--out-suffix",
         help="Write output to <input><suffix> (requires --input not '-' and --out not set).",
     )
+    p_run.add_argument(
+        "--atomic",
+        action="store_true",
+        help="When writing to a file, write to a temp file and atomically replace the destination.",
+    )
     p_run.add_argument("--encoding", default="utf-8", help="Text encoding for file IO.")
     p_run.add_argument(
         "--errors",
@@ -159,6 +164,8 @@ def _run(args: argparse.Namespace) -> int:
             raise ValueError("--in-place cannot be used with --out (omit it or use '-')")
         if args.dry_run:
             raise ValueError("--dry-run cannot be combined with --in-place")
+        if args.atomic:
+            raise ValueError("--atomic cannot be combined with --in-place")
         if Path(args.input).suffix == ".gz":
             raise ValueError("--in-place is not supported for .gz inputs; use --out <path>.gz")
         stats = _redact_in_place(
@@ -179,6 +186,7 @@ def _run(args: argparse.Namespace) -> int:
             dry_run=bool(args.dry_run),
             encoding=args.encoding,
             errors=args.errors,
+            atomic=bool(args.atomic),
         )
 
     if args.stats_out:
@@ -235,6 +243,7 @@ def _redact_to_output(
     dry_run: bool,
     encoding: str,
     errors: str,
+    atomic: bool,
 ) -> RedactionStats:
     with ExitStack() as stack:
         if input_arg == "-":
@@ -249,41 +258,77 @@ def _redact_to_output(
             else:
                 inp = stack.enter_context(input_path.open("r", encoding=encoding, errors=errors))
 
-        out: TextIO
-        out_path: Path | None
-
-        if dry_run:
-            if out_arg != "-":
-                raise ValueError("--dry-run requires --out '-' (default)")
-            out = stack.enter_context(open(os.devnull, "w", encoding=encoding))
-            out_path = None
-        else:
-            if out_arg == "-":
-                out = sys.stdout
-                out_path = None
-            else:
-                out_path = Path(out_arg).resolve()
-                if input_path is not None and out_path == input_path:
-                    raise ValueError(
-                        "Output path equals input path; use --in-place for safe overwrite"
-                    )
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                if out_path.suffix == ".gz":
-                    out = stack.enter_context(gzip.open(out_path, "wt", encoding=encoding))
-                else:
-                    out = stack.enter_context(out_path.open("w", encoding=encoding))
-
         report_stream = None
         if report_out:
             report_path = Path(report_out).resolve()
             if input_path is not None and report_path == input_path:
                 raise ValueError("--report-out cannot be the same path as --input")
-            if out_path is not None and report_path == out_path:
-                raise ValueError("--report-out cannot be the same path as --out")
             report_path.parent.mkdir(parents=True, exist_ok=True)
             report_stream = stack.enter_context(report_path.open("w", encoding="utf-8"))
 
-        return redact_stream(inp, out, rules=rules, report_out=report_stream)
+        if dry_run:
+            if out_arg != "-":
+                raise ValueError("--dry-run requires --out '-' (default)")
+            if atomic:
+                raise ValueError("--atomic cannot be combined with --dry-run")
+            out_devnull = stack.enter_context(open(os.devnull, "w", encoding=encoding))
+            return redact_stream(inp, out_devnull, rules=rules, report_out=report_stream)
+
+        if out_arg == "-":
+            if atomic:
+                raise ValueError("--atomic cannot be used with --out '-'")
+            return redact_stream(inp, sys.stdout, rules=rules, report_out=report_stream)
+
+        out_path = Path(out_arg).resolve()
+        if input_path is not None and out_path == input_path:
+            raise ValueError("Output path equals input path; use --in-place for safe overwrite")
+        if report_out and Path(report_out).resolve() == out_path:
+            raise ValueError("--report-out cannot be the same path as --out")
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        if not atomic:
+            if out_path.suffix == ".gz":
+                out_file: TextIO = gzip.open(out_path, "wt", encoding=encoding)
+                stack.callback(out_file.close)
+            else:
+                out_file = stack.enter_context(out_path.open("w", encoding=encoding))
+            return redact_stream(inp, out_file, rules=rules, report_out=report_stream)
+
+        # Atomic write: write to sibling temp file then replace destination.
+        st_mode = None
+        try:
+            st_mode = out_path.stat().st_mode
+        except FileNotFoundError:
+            st_mode = None
+
+        temp_path: Path | None = None
+        try:
+            with NamedTemporaryFile(
+                mode="wb",
+                delete=False,
+                dir=str(out_path.parent),
+                prefix=out_path.name + ".",
+                suffix=".tmp",
+            ) as tmp:
+                temp_path = Path(tmp.name)
+            if st_mode is not None:
+                os.chmod(temp_path, st_mode)
+
+            if out_path.suffix == ".gz":
+                with gzip.open(temp_path, "wt", encoding=encoding) as out_gz:
+                    stats = redact_stream(inp, out_gz, rules=rules, report_out=report_stream)
+            else:
+                with temp_path.open("w", encoding=encoding) as out_plain:
+                    stats = redact_stream(inp, out_plain, rules=rules, report_out=report_stream)
+
+            os.replace(str(temp_path), str(out_path))
+            return stats
+        finally:
+            if temp_path is not None and temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except OSError:
+                    pass
 
 
 def _redact_in_place(

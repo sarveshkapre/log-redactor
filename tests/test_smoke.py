@@ -322,3 +322,52 @@ def test_cli_encoding_errors_replace(tmp_path: Path) -> None:
     text = out.read_text(encoding="utf-8")
     assert "bad:\ufffd" in text
     assert "password=[REDACTED]" in text
+
+
+def test_cli_atomic_file_output(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    out = tmp_path / "out.log"
+    inp.write_text("password=secret\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--out",
+            str(out),
+            "--atomic",
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+    assert out.read_text(encoding="utf-8").strip() == "password=[REDACTED]"
+
+
+def test_cli_atomic_rejects_stdout(tmp_path: Path) -> None:
+    inp = tmp_path / "in.log"
+    inp.write_text("password=secret\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "log_redactor",
+            "redact",
+            "--input",
+            str(inp),
+            "--atomic",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2

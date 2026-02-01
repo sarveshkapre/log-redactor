@@ -15,6 +15,7 @@
 - Added `--dry-run` to compute stats/report without writing redacted output.
 - Added `--out-suffix` for easy sibling-file output.
 - Added `--encoding` and `--errors` to control file decoding.
+- Added `--atomic` for safe output file writes.
 - Repo hygiene: ignore local caches (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`).
 
 ## Verify
