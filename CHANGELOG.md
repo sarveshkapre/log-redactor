@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## v0.1.3 - 2026-02-01
+
+- Add `rules` subcommand to export the effective ruleset as JSON.
+- Add cookie / set-cookie / token query redaction patterns.
+
 ## v0.1.2 - 2026-02-01
 
 - Expand built-in redaction rules (GitHub/Slack/Stripe/Google tokens, JWTs, URL basic-auth, private key header).

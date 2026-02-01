@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from contextlib import ExitStack
@@ -17,6 +18,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="version", version=_version())
 
     sub = parser.add_subparsers(dest="cmd", required=True)
+    p_rules = sub.add_parser("rules", help="List redaction rules as JSON")
+    p_rules.add_argument(
+        "--rules",
+        action="append",
+        default=[],
+        help="Path to JSON rules file to include (repeatable).",
+    )
+    p_rules.add_argument(
+        "--no-defaults",
+        action="store_true",
+        help="Do not include built-in redaction rules.",
+    )
+    p_rules.add_argument("--pretty", action="store_true", help="Pretty-print JSON.")
+    p_rules.set_defaults(func=_rules)
+
     p_run = sub.add_parser("redact", help="Redact a log file")
     p_run.add_argument("--input", required=True, help="Input log file path or '-' for stdin")
     p_run.add_argument("--out", default="-", help="Output log path or '-' for stdout")
@@ -112,6 +128,19 @@ def _run(args: argparse.Namespace) -> int:
     if args.fail_on_redaction and stats.redactions:
         return 1
 
+    return 0
+
+
+def _rules(args: argparse.Namespace) -> int:
+    rules: list[RedactionRule] = [] if args.no_defaults else list(DEFAULT_RULES)
+    for path_str in args.rules:
+        rules.extend(load_rules_json(Path(path_str)))
+
+    payload = {"rules": [{"pattern": r.pattern, "replacement": r.replacement} for r in rules]}
+    if args.pretty:
+        print(json.dumps(payload, indent=2, sort_keys=True), file=sys.stdout)
+    else:
+        print(json.dumps(payload, separators=(",", ":"), sort_keys=True), file=sys.stdout)
     return 0
 
 

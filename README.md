@@ -2,7 +2,7 @@
 
 Redact secrets/PII from logs with safe defaults.
 
-## Scope (v0.1.2)
+## Scope (v0.1.3)
 
 - Regex-based redaction for common secrets and PII.
 - Optional configurable rule files.
@@ -26,6 +26,14 @@ python -m log_redactor redact --input app.log --out app.redacted.log
 
 Stats are emitted as JSON on stderr (so stdout can be used for redacted output when `--out -`).
 If `--out` is omitted, output defaults to stdout.
+
+### List rules
+
+Dump the effective rule set as JSON (useful for auditing and building a custom rule file):
+
+```bash
+python -m log_redactor rules --pretty
+```
 
 ### Stream mode
 

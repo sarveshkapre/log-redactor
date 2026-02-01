@@ -38,3 +38,21 @@ def test_additional_builtin_rules_smoke() -> None:
     assert "[REDACTED_GITHUB_TOKEN]" in out
     assert "https://[REDACTED_USER]:[REDACTED_PASS]@example.com" in out
     assert count >= 2
+
+
+def test_cookie_header_redaction() -> None:
+    out, count = redact_line("Cookie: a=1; sessionid=abc; theme=dark\n")
+    assert out == "Cookie: [REDACTED]\n"
+    assert count == 1
+
+
+def test_set_cookie_redaction_preserves_attributes() -> None:
+    out, count = redact_line("Set-Cookie: sessionid=abc123; Path=/; HttpOnly\n")
+    assert out == "Set-Cookie: [REDACTED]\n"
+    assert count == 1
+
+
+def test_query_token_redaction() -> None:
+    out, count = redact_line("GET /cb?access_token=abc&x=1\n")
+    assert "access_token=[REDACTED]" in out
+    assert count == 1

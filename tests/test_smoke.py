@@ -11,6 +11,19 @@ def test_help() -> None:
     assert proc.returncode == 0
 
 
+def test_rules_command_outputs_json() -> None:
+    proc = subprocess.run(
+        [sys.executable, "-m", "log_redactor", "rules"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert proc.stderr == ""
+    payload = json.loads(proc.stdout)
+    assert isinstance(payload["rules"], list)
+
+
 def test_cli_redact_emits_json_stats(tmp_path: Path) -> None:
     inp = tmp_path / "in.log"
     out = tmp_path / "out.log"

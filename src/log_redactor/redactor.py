@@ -23,6 +23,20 @@ DEFAULT_PATTERNS: list[tuple[str, str]] = [
         r"\1[REDACTED_USER]:[REDACTED_PASS]@",
     ),
     (r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----", "[REDACTED_PRIVATE_KEY]"),
+    (
+        r"(?i)^(cookie:\s*)[^\r\n]+",
+        r"\1[REDACTED]",
+    ),
+    (
+        r"(?i)^(set-cookie:\s*)[^\r\n]+",
+        r"\1[REDACTED]",
+    ),
+    (
+        r"(?i)\b(access_token|refresh_token|id_token|session(?:id)?|session_id|csrf(?:_token)?|auth_token|session_token|token)=((?!\[REDACTED)[^\s&;]+)",
+        r"\1=[REDACTED]",
+    ),
+    (r"(?i)authorization: basic [a-z0-9+/=]+", "authorization: basic [REDACTED]"),
+    (r"(?i)x-api-key:\s*[^\s]+", "x-api-key: [REDACTED]"),
     (r"(?i)authorization: bearer [a-z0-9\-_.=]+", "authorization: bearer [REDACTED]"),
     (r"(?i)api[_-]?key=([a-z0-9\-_.]+)", "api_key=[REDACTED]"),
     (r"(?i)password=([^\s&]+)", "password=[REDACTED]"),
